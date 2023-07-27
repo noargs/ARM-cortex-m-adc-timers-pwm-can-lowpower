@@ -21,27 +21,6 @@ int main(void)
   uint16_t len_of_data = strlen(user_data);
   HAL_UART_Transmit(&huart2, (uint8_t*)user_data, len_of_data, HAL_MAX_DELAY);
 
-  uint8_t receive_data;
-  uint8_t data_buffer[100];
-  uint32_t count = 0;
-
-  while(1)
-  {
-  	HAL_UART_Receive(&huart2, &receive_data, 1, HAL_MAX_DELAY);
-  	if (receive_data == '\r')
-  	{
-  		break;
-  	}
-  	else
-  	{
-  		data_buffer[count++] = convert_to_capital(receive_data);
-  	}
-  }
-
-  data_buffer[count++] = '\r';
-
-  HAL_UART_Transmit(&huart2, data_buffer, count, HAL_MAX_DELAY);
-
 
   while(1);
 
