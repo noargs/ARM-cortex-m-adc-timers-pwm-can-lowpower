@@ -12,9 +12,21 @@ UART_HandleTypeDef huart2;
 
 int main(void)
 {
+	RCC_OscInitTypeDef osc_init;
+	RCC_ClkInitTypeDef clk_init;
+
   HAL_Init();
 
   UART2_Init();
+
+  memset(&osc_init, 0, sizeof(osc_init));
+  osc_init.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  osc_init.HSEState       = RCC_HSE_BYPASS;
+
+  if (HAL_RCC_OscConfig(&osc_init) != HAL_OK)
+  {
+  	Error_handler();
+  }
 
 
   while(1);
