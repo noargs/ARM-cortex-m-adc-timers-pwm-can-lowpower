@@ -2,6 +2,8 @@
 #include "stm32f4xx_hal.h"
 #include "main.h"
 
+#define TRUE                         1
+#define FALSE                        0
 
 void SystemClockConfig(void);
 void UART2_Init(void);
@@ -12,6 +14,14 @@ UART_HandleTypeDef huart2;
 
 char *user_data = "The application is running\r\n";
 
+uint8_t data_buffer[100];
+
+uint8_t received_data;
+
+uint32_t count;
+
+uint8_t reception_complete = FALSE;
+
 int main(void)
 {
   HAL_Init();
@@ -20,6 +30,9 @@ int main(void)
 
   uint16_t len_of_data = strlen(user_data);
   HAL_UART_Transmit(&huart2, (uint8_t*)user_data, len_of_data, HAL_MAX_DELAY);
+
+  while(reception_complete != TRUE)
+  	HAL_UART_Receive_IT(&huart2, &received_data, 1);
 
 
   while(1);
@@ -47,6 +60,21 @@ void UART2_Init(void)
   	// There's a problem
   	Error_handler();
   }
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+	if (received_data == '\r')
+	{
+		reception_complete = TRUE;
+		data_buffer[count++] = '\r';
+		HAL_UART_Transmit(huart, data_buffer, count, HAL_MAX_DELAY);
+	}
+	else
+	{
+		data_buffer[count++] = received_data;
+	}
+
 }
 
 uint8_t convert_to_capital(uint8_t data)
