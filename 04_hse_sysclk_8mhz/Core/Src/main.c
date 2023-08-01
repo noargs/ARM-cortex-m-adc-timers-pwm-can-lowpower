@@ -14,6 +14,7 @@ int main(void)
 {
 	RCC_OscInitTypeDef osc_init;
 	RCC_ClkInitTypeDef clk_init;
+	char msg[100];
 
   HAL_Init();
 
@@ -28,6 +29,45 @@ int main(void)
   	Error_handler();
   }
 
+  clk_init.ClockType = RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK |  \
+  		                 RCC_CLOCKTYPE_PCLK1  | RCC_CLOCKTYPE_PCLK2;
+
+  clk_init.SYSCLKSource = RCC_SYSCLKSOURCE_HSE;
+  clk_init.AHBCLKDivider = RCC_SYSCLK_DIV2;
+  clk_init.APB1CLKDivider = RCC_HCLK_DIV2;
+  clk_init.APB2CLKDivider = RCC_HCLK_DIV2;
+
+  if (HAL_RCC_ClockConfig(&clk_init, FLASH_ACR_LATENCY_0WS) != HAL_OK)
+  {
+  	Error_handler();
+  }
+
+  __HAL_RCC_HSI_DISABLE(); // Saves some current
+
+
+  // SysTick Configuration
+
+  HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
+
+  HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
+
+  UART2_Init(); // Baud rate changed as Clock changed from HSI to HSE
+
+  memset(msg,0,sizeof(msg));
+  sprintf(msg, "SYSCLK: %ldHz\r\n", HAL_RCC_GetSysClockFreq());
+  HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
+
+  memset(msg,0,sizeof(msg));
+  sprintf(msg, "HCLK: %ldHz\r\n", HAL_RCC_GetHCLKFreq());
+  HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
+
+  memset(msg,0,sizeof(msg));
+  sprintf(msg, "PCLK1: %ldHz\r\n", HAL_RCC_GetPCLK1Freq());
+  HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
+
+  memset(msg,0,sizeof(msg));
+  sprintf(msg, "PCLK2: %ldHz\r\n", HAL_RCC_GetPCLK2Freq());
+  HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
 
   while(1);
 
