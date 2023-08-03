@@ -17,6 +17,8 @@ int main(void)
   // @args SYS_CLOCK_FREQ_50_MHZ, @args SYS_CLOCK_FREQ_84_MHZ, @args SYS_CLOCK_FREQ_120_MHZ
   SystemClock_Config(SYS_CLOCK_FREQ_50_MHZ);
 
+  UART2_Init();
+
   memset(msg,0,sizeof(msg));
   sprintf(msg, "SYSCLK: %ldHz\r\n", HAL_RCC_GetSysClockFreq());
   HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
@@ -33,7 +35,6 @@ int main(void)
   sprintf(msg, "PCLK2: %ldHz\r\n", HAL_RCC_GetPCLK2Freq());
   HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
 
-  UART2_Init();
 
   while(1);
 
