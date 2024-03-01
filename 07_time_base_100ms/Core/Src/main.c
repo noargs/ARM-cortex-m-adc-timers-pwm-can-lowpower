@@ -22,10 +22,10 @@ int main(void)
   {
   	// loop until the `Update event` flag is set
   	while( !(TIM6->SR & TIM_SR_UIF));
-  	// The require time delay has been elapsed
+  	// The required time delay has been elapsed
 
   	// User code can be executed
-  	TIM6->SR = 0; // cleared by software
+  	TIM6->SR = 0; // cleared by software (Ref Manual page: 637)
   	HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
   }
 
