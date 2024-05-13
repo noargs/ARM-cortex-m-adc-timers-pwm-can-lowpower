@@ -15,7 +15,7 @@ int main(void)
   GPIO_Init();
   TIMER6_Init();
 
-  // Start the timer
+  // Start the timer - polling mode
   HAL_TIM_Base_Start(&htimer6);
 
   while(1)
