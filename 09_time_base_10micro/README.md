@@ -6,12 +6,12 @@ Exclude following files from build:
 
 In this exercise, which is based on timebase generation using timer6 (i.e. TIM6) peripheral of the microcontroller.    
       
-|:-------------|:-------------|
-| TIMER Clock Frequency (TIMx_CLK) | 50000000 (50MHz) |
-| Prescaler | 9 |
-| TIMER Count Clock (CNT_CLK) | 5000000 |
-| Time Peroid of CNT_CLK | 0.0000002 |
-| Period Value (ARR) | 50 |
+|:-------------|:-------------|     
+| TIMER Clock Frequency (TIMx_CLK) | 50000000 (50MHz) |   
+| Prescaler | 9 |   
+| TIMER Count Clock (CNT_CLK) | 5000000 |    
+| Time Peroid of CNT_CLK | 0.0000002 |   
+| Period Value (ARR) | 50 |      
 | Timebase required | 0.00001 |        
      
 We use the timer clock frequency as 50MHz `SYS_CLOCK_FREQ_50_MHZ` and if we analyse that using diagram below, our system clock **SYSCLK** will running at 50MHz and **AHB prescaler** will be 1, **HCLK** will be 50, our processor **Cortex System timer** will be running at 50MHz and the **HCLK to the AHB bus** will be 50MHz. However you look at the timer **APB1 Timer clocks** will also get 50MHz. Even though the **APB1 prescaler** is 2 here. Hence the **APB1 peripheral clock** will be 25MHz, which is actually under-driven as it's maximum capacity is 45 MHz. On the other hand, the timer clock frequency **APB1 Timer clocks** will be 50MHz. Therefore the timebase required is 10 micro (as mentioned on above table as **0.00001**). Similarly, we get the ARR value 50, if we use the prescaler 9. However if we use prescaler 19, then you would get ARR (Period value) as 25.      
