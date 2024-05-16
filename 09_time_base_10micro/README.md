@@ -4,9 +4,10 @@ Exclude following files from build:
 - `main.c`, `stm32f4xx_hal_msp.c`, and `stm32f4xx_it.c` in _Core/Src_ directory.
 - `main.h`, `stm32f4xx_it.h` in _Core/Inc_ directory.       
 
-In this exercise, which is based on timebase generation using timer6 (i.e. TIM6) peripheral of the microcontroller.    
-      
-|:-------------|:-------------|     
+In this exercise, which is based on timebase generation using timer6 (i.e. TIM6) peripheral of the microcontroller.     
+
+|              |              |    
+|:-------------|-------------:|     
 | TIMER Clock Frequency (TIMx_CLK) | 50000000 (50MHz) |   
 | Prescaler | 9 |   
 | TIMER Count Clock (CNT_CLK) | 5000000 |    
