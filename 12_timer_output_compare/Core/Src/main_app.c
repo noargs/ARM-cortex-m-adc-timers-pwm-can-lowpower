@@ -12,6 +12,10 @@ void Error_handler(void);
 TIM_HandleTypeDef htimer2;
 UART_HandleTypeDef huart2;
 
+uint32_t pulse1_value = 25000;  // to produce 500 Hz
+uint32_t pulse2_value = 12500;  // to produce 1000 Hz
+uint32_t pulse3_value = 6250;   // to produce 2000 Hz
+uint32_t pulse4_value = 3125;   // to produce 4000 Hz
 
 int main(void)
 {
@@ -143,7 +147,40 @@ void UART2_Init(void)
 
 void TIMER2_Init(void)
 {
+  htimer2.Instance = TIM2;
+  htimer2.Init.Period = 0xFFFFFFFF;
+  htimer2.Init.Prescaler = 1;
+  if (HAL_TIM_OC_Init(&htimer2) != HAL_OK)
+  {
+	Error_handler();
+  }
 
+  TIM_OC_InitTypeDef tim2_oc_init;
+  tim2_oc_init.OCMode = TIM_OCMODE_TOGGLE;
+  tim2_oc_init.OCPolarity = TIM_OCPOLARITY_HIGH; // CC1P as 0 means `TIM_OCPOLARITY_HIGH`
+  tim2_oc_init.Pulse = pulse1_value;             // depends upon how much frequency need at output channel, (we need ch1 500Hz, ch2 1KHz, ch3 2KHz, ch4 4KHz)
+  if (HAL_TIM_OC_ConfigChannel(&timer2, &tim2_oc_init, TIM_CHANNEL_1) != HAL_OK)
+  {
+	Error_handler();
+  }
+
+  tim2_oc_init.Pulse = pulse2_value;
+  if (HAL_TIM_OC_ConfigChannel(&timer2, &tim2_oc_init, TIM_CHANNEL_2) != HAL_OK)
+  {
+	Error_handler();
+  }
+
+  tim2_oc_init.Pulse = pulse3_value;
+  if (HAL_TIM_OC_ConfigChannel(&timer2, &tim2_oc_init, TIM_CHANNEL_3) != HAL_OK)
+  {
+	Error_handler();
+  }
+
+  tim2_oc_init.Pulse = pulse4_value;
+  if (HAL_TIM_OC_ConfigChannel(&timer2, &tim2_oc_init, TIM_CHANNEL_4) != HAL_OK)
+  {
+	Error_handler();
+  }
 }
 
 void Error_handler(void)
