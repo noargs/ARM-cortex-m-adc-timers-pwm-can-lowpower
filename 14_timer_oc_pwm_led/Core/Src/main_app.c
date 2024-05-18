@@ -5,20 +5,17 @@
 
 void SystemClock_Config_HSE(uint8_t clock_freq);
 void GPIO_Init(void);
-void UART2_Init(void);
 void TIMER2_Init(void);
 void Error_handler(void);
 
 TIM_HandleTypeDef htimer2;
-UART_HandleTypeDef huart2;
 
 int main(void)
 {
-
+  uint16_t brightness = 0;    // ccr is of 16-bit
   HAL_Init();
   SystemClock_Config_HSE(SYS_CLOCK_FREQ_50_MHZ); // using HSE on TIMER app is RECOMMENDED as output will improve alot
   GPIO_Init();
-  UART2_Init();
   TIMER2_Init();
 
   if (HAL_TIM_PWM_Start(&htimer2, TIM_CHANNEL_1) != HAL_OK)
@@ -26,22 +23,23 @@ int main(void)
 	Error_handler();
   }
 
-  if (HAL_TIM_PWM_Start(&htimer2, TIM_CHANNEL_2) != HAL_OK)
+  while (1)
   {
-	Error_handler();
-  }
+	while(brightness < htimer2.Init.Period)
+	{
+	  // here, we constantly feed the pulse value which eventuelly programmed into ccr (capture and compare register)
+	  brightness+=10;
+	  __HAL_TIM_SET_COMPARE(&htimer2, TIM_CHANNEL_1, brightness);
+	  HAL_Delay(1); // 1ms delay as processor running higher frequency (50MHz) than the timer (10MHz)
+	}
 
-  if (HAL_TIM_PWM_Start(&htimer2, TIM_CHANNEL_3) != HAL_OK)
-  {
-	Error_handler();
+	while (brightness > 0)
+	{
+	  brightness-=10;
+	  __HAL_TIM_SET_COMPARE(&htimer2, TIM_CHANNEL_1, brightness);
+	  HAL_Delay(1);
+	}
   }
-
-  if (HAL_TIM_PWM_Start(&htimer2, TIM_CHANNEL_4) != HAL_OK)
-  {
-	Error_handler();
-  }
-
-  while(1);
 
   return 0;
 }
@@ -145,21 +143,6 @@ void GPIO_Init(void)
   HAL_GPIO_Init(GPIOA, &led_gpio);
 }
 
-void UART2_Init(void)
-{
-  huart2.Instance = USART2;
-  huart2.Init.BaudRate = 115200;
-  huart2.Init.WordLength = UART_WORDLENGTH_8B;
-  huart2.Init.StopBits = UART_STOPBITS_1;
-  huart2.Init.Parity = UART_PARITY_NONE;
-  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart2.Init.Mode = UART_MODE_TX_RX;
-  if (HAL_UART_Init(&huart2) != HAL_OK)
-  {
-	Error_handler();
-  }
-}
-
 void TIMER2_Init(void)
 {
   htimer2.Instance = TIM2;
@@ -175,26 +158,8 @@ void TIMER2_Init(void)
 
   tim2_pwm_config.OCMode = TIM_OCMODE_PWM1;
   tim2_pwm_config.OCPolarity = TIM_OCPOLARITY_HIGH;
-  tim2_pwm_config.Pulse = (htimer2.Init.Period * (25/100));                // 25% Duty cycle i.e. Ton -> 25%
+  tim2_pwm_config.Pulse = 0;
   if (HAL_TIM_PWM_ConfigChannel(&htimer2, &tim2_pwm_config, TIM_CHANNEL_1) != HAL_OK)
-  {
-	Error_handler();
-  }
-
-  tim2_pwm_config.Pulse = (htimer2.Init.Period * (45/100));                // 45% Duty cycle i.e. Ton -> 45%
-  if (HAL_TIM_PWM_ConfigChannel(&htimer2, &tim2_pwm_config, TIM_CHANNEL_2) != HAL_OK)
-  {
-	Error_handler();
-  }
-
-  tim2_pwm_config.Pulse = (htimer2.Init.Period * (75/100));                // 75% Duty cycle i.e. Ton -> 75%
-  if (HAL_TIM_PWM_ConfigChannel(&htimer2, &tim2_pwm_config, TIM_CHANNEL_3) != HAL_OK)
-  {
-	Error_handler();
-  }
-
-  tim2_pwm_config.Pulse = (htimer2.Init.Period * (95/100));                // 95% Duty cycle i.e. Ton -> 95%
-  if (HAL_TIM_PWM_ConfigChannel(&htimer2, &tim2_pwm_config, TIM_CHANNEL_4) != HAL_OK)
   {
 	Error_handler();
   }
