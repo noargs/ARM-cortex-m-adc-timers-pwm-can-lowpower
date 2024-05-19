@@ -6,14 +6,16 @@
 void SystemClock_Config_HSE(uint8_t clock_freq);
 void GPIO_Init(void);
 void Error_handler(void);
+void CAN1_Init(void);
 
-TIM_HandleTypeDef htimer2;
+CAN_HandleTypeDef hcan1;
 
 int main(void)
 {
   HAL_Init();
   SystemClock_Config_HSE(SYS_CLOCK_FREQ_50_MHZ);
   GPIO_Init();
+  CAN1_Init();
 
   while (1);
 
