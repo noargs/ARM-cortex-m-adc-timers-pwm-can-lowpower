@@ -161,77 +161,146 @@ For a reminder, the dominant state of the bus is voltage difference of 2 volts. 
 <img src="../images/image2.png" alt="are 4 different message types (or frames) in CAN protocol">                                  
 
 Let's understand CAN message types. There are 4 different message types, frames or frame types available in the CAN protocol (as shown above)       
-We will often use **Data frame** and **Remote frame** in our applications. Whereas **Error frame** and **Overload frame** are actually used by the controllers automatically whenever they detect any violation.                                     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-To create a project follow the previous (`08_time_base_100ms_it`) repo's [README](https://github.com/noargs/ARM-cortex-m-adc-timers-pwm-can-lowpower/tree/main/08_time_base_100ms_it), enable TIMER6 and generate code and also create `main_app.c`, `msp.c`, and `it.c` in _Core/Src_ directory And create `main_app.h` and `it.h` in _Core/Inc_ directory.     
+We will often use **Data frame** and **Remote frame** in our applications. Whereas **Error frame** and **Overload frame** are actually used by the controllers automatically whenever they detect any erros or violations of signaling rules in the CAN protocol. However, we basically use Data frame more frequently than the Remote frame.      
       
-Exclude following files from build:
-- `main.c`, `stm32f4xx_hal_msp.c`, and `stm32f4xx_it.c` in _Core/Src_ directory.
-- `main.h`, `stm32f4xx_it.h` in _Core/Inc_ directory.       
+### Data Frame      
 
-In this exercise, which is based on timebase generation using timer6 (i.e. TIM6) peripheral of the microcontroller.     
+- One of the Most Common Message Types in CAN communication.       
+- We use it very frequently in our application.        
+- This is a frame format used by a CAN Node to send a message to other Nodes (It's like to broadcast a message which uses data frame.)         
+      
+### Data Frame format           
 
-|              |              |    
-|:-------------|-------------:|     
-| TIMER Clock Frequency (TIMx_CLK) | 50000000 (50MHz) |   
-| Prescaler | 9 |   
-| TIMER Count Clock (CNT_CLK) | 5000000 |    
-| Time Peroid of CNT_CLK | 0.0000002 |   
-| Period Value (ARR) | 50 |      
-| Timebase required | 0.00001 |        
-     
-We use the timer clock frequency as 50MHz `SYS_CLOCK_FREQ_50_MHZ` and if we analyse that using diagram below, our system clock **SYSCLK** will running at 50MHz and **AHB prescaler** will be 1, **HCLK** will be 50, our processor **Cortex System timer** will be running at 50MHz and the **HCLK to the AHB bus** will be 50MHz. However you look at the timer **APB1 Timer clocks** will also get 50MHz. Even though the **APB1 prescaler** is 2 here. Hence the **APB1 peripheral clock** will be 25MHz, which is actually under-driven as it's maximum capacity is 45 MHz. On the other hand, the timer clock frequency **APB1 Timer clocks** will be 50MHz. Therefore the timebase required is 10 micro (as mentioned on above table as **0.00001**). Similarly, we get the ARR value 50, if we use the prescaler 9. However if we use prescaler 19, then you would get ARR (Period value) as 25.      
-     
-<img src="../images/clock_configuration.png" alt="Clock Configuration of 50MHz">     
+In every digital communication or in any specification you find the frame has many fields like payload field, length field, the CRC field, the field which marks the beginning and end of the frame etc. Similarly, CAN protocol also has various segments / fields in a Data frame.       
+The important fields are the **Start of Frame** first dominant bit which marks the start of a frame. Next, we have **Arbitration field** which consumes 12 bits. Next, some Control fields (**IDE**, **Reserverd**), followed by length field **Data Length Code (DLC)**. And after comes the **Data** field, where we put our payload (8-bytes maximum). Next is the **CRC** field which you need not to calculate and put any CRC code here as the controller has the capability to calculate the CRC automatically and append to the frame. And after that, comes an important field, that is the **Ack slot bit** and this Ack slot is actually set to dominant by the receiving Node (if it finds that the frame is good).      
+Hence, if a transmitter finds a dominant state at Ack slot bit position, then transmitter concludes that message sent successfully and If a transmitter sees recessive state at this position, then it understands that message has an error. Therefore it automatically re-transmits the message. _Ack slot is actually managed by the receiving node_.     
+        
+<img src="../images/image217.png" alt="CAN Data frame format">         
+        
+Now, after that follows the **End of frame**. End of frame is actually a collection of 7 recessive states and then comes 3 bit **Inter Frame Spacing** (IFS0-IFS2 are another 3 recessive states).       
+      
+We will understand each important field one by one.      
+      
+### Arbitration Field      
+       
+Arbitration fields actually contains an Arbitration ID. In which, 11 bit is called as an identifier. And there is another bit that is called as **RTR** bit (Remote Transmission Request). So the Arbitration ID follows _Start of Frame_ bit. That is the first dominant bit.        
+       
+- The arbitration field determines the priority of the message when two or more nodes are contending for the bus. The Arbitration field contains: For _CAN 2.0A_ specification, an 11-bit identifier and one bit for RTR bit, which is dominant for Data frame.       
+- This 11-bit Arbitraion identifier establishes the priority of the message. The lower the binary value, the higher its priority.        
+       
+> [!NOTE]        
+> According to **CAN 2.0**, If Arbitration identifier contains 11-bits in a frame then it is called as **Standard CAN** frame. On the other hand, if its 29-bits identifier then its called **Extended CAN**.      
 
-```c
-void TIMER6_Init(void)
-{
-  htimer6.Instance = TIM6;
-  htimer6.Init.Prescaler = 9;
-  htimer6.Init.Period = 50-1;
-  if (HAL_TIM_Base_Init(&htimer6) != HAL_OK)
-  {
-	Error_handler();
-  }
-}
-```          
+### Standard CAN Vs Extended CAN     
+
+- The original specification is the Bosch specification Version 2.0.        
+- Version 2.0 specification is divided into two parts. **Standard CAN (Version 2.0A) uses 11 bit identifier**. whereas **Extended CAN (Version 2.0B) uses 29 bit identifier** (made up of 18-bit extension and an 11-bit identifier)              
+- Most **2.0A** controllers transmit / receive only Standard format messages.        
+- Whereas **2.0B** controllers can send and receive messages in both formats.       
+
+They have added two more control bits, **SRR** and **IDE** to distinguish Standard frame and Extended frame.                    
+       
+<img src="../images/image218.png" alt="Extended frame format - CAN 2.0B">       
+
+For example, our microcontroller, which is STM32 based microcontroller, comprises of a CAN controller with 2.0B specification. Therefore it is Extended CAN controller or BX CAN (Basic Extended CAN). For this, you have to check the data sheet or the reference manual of your microcontroller to understand the kind of CAN controller it contains.      
+      
+- If you have a CAN network which consist of both 2.0A and 2.0B based CAN devices and if you use extended frame format (29 bit identifier) for data communication. Then your network will not work as 2.0A devices will not understand those identifiers and they will start generating an error.       
+- 2.0B controllers are completely backward compatible with 2.0A controllers and can transmit / receive messages in either format.       
+- Whereas 2.0A controller based devices are capable of transmitting / receiving messages in 2.0A format only (Standard format). With this type of controller, reception of any 2.0B message will flag an error.          
+         
+### RTR bit (Remote Transmission Request)         
+
+For Data frame you need not to worry about this as if you mention a frame type as a Data frame. Then your controller will automatically make this bit as dominant.      
+The _dominant RTR bit_ (logic 0) indicates that the message is Data frame. A _recessive_ value (logic 1) indicates that the message is a Remote Transmission Request or also known as Remote frame. A Remote Frame is a request by one Node for data from some other node on the bus. Hence, **Remote Frames do not contain a Data Field**.    
+      
+### DLC, DATA, and CRC Fields     
+
+The 4-bit data length code (DLC) constains the number of bytes of data being transmitted.    
+
+The Data Field, which contains 0 to 8 bytes of data.         
+
+The CRC Field contains a 15 bit checksum calculated on most parts of the message. This checksum is used for error detection.      
+      
+### ACK      
      
-Now build/run the project on the target chip (NUCLEO-F446RE),      
-     
-> [!NOTE]     
-> After building the project If you dont see the binary, simply right click on the project and click _Refresh_     
-     
-Now analyse the program with _logic analyser_. The capture is completed and it is showing 9.75 microseconds. So, we are actually short of 0.2 microseconds. This may be due to the error involved in this software and we are actually getting close to the 10 microseconds.      
+As soon as CAN receiver starts receiving a frame it also calculates the CRC and then it matches with the CRC send by the transmitter. If a frame doesn't violate any CAN specification rules then the receiver makes the bus state as dominant at Ack slot bit and when transmitter sees that slot as dominant. It understands that message has transmitted successfully. On the other hand, if transmitters sees recessive it will re-transmit the message as that is Nack. Therefore ACK slot in debugging is very helpful.      
        
 > [!NOTE]      
-> Toggling GPIOs(`HAL_GPIO_Togglepin()`) using softwares, whenever update event happens, is not that recommended. As a timer peripheral can do that automatically without using any code, for that we have to use OUTPUT COMPARE feature of the timer which is available in General Purpose timer.     
+> It is worth noting that the presence of an Acknowledgment Bit on the bus does not mean that any of the intended devices has received the message.      
+> It just means that one or more nodes on the bus has received it correctly and Transmitter concludes that message sent successfully.     
+> If Transmitter sees recessives state at the ACK slot, then it re-transmits the message until it sees dominant state. That's the reason when there is only one node on the bus, transmitter keep sending the same message since no one is there to ACK it. Hence the ACK bit is actually set by the receiving node. It is not set by the transmitting node. So, transmitter will always keep this slot as recessive only. But someone has to override this bit with dominant bit If that node has received that properly.       
       
-```c
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-}
-```        
-     
-Using code to toggle the GPIO actually involves lots of code execution and it consumes lots of clock cycles or bus cycles. Hence, you will never get accurate timings.     
-     
-This exercise was introduced to work with timer clock with different clock frequencies (`TIMx_CLK`). You can give different timebase (other than 10ms) and play with these numbers and try to get the trace and analyze it. Alternatively, you can find out what is the maximum/minimum delay. The maximum delay means the ARR value has to be all 0xFF that is around 65K. However for the minimum, you may have some restrictions, as in interrupt mode the interrupt processing routine itself takes around 3 microseconds.      
+### ACK Significance Summary     
+
+- Every Node receiving an accurate message overwrites this recessive bit in the original message with a dominate bit, indicating an error-free message has been sent. If a receiving node detects an error then it leaves this bit as recessive, it discards the message and the sending Node repeats the message after the re-arbitration. So in this way, each Node acknowledges(ACK) the integrity of its data. ACK is 2 bits, one is the acknowledgment bit and one is the ACK delimiter.        
+- Bbecause all receivers must participate in the acknowledgement algorithm regardless of whether the message is intended for them or not, an acknowledgment to the transmitter may occur even if the expected receiver is not present on the network (There must be one node on the network as It need not be an intended node).       
+- This means that the CAN ACK does not guarantee that a data transfer has occurred between the transmitter and a designated receiver. It does not confirm that a requested action has been understood or performed. CAN ACK only confirms that all resident network Nodes agree that the CAN message did not violate any Data Link layer rules.     
+
+### End of Frame, IFS (Inter Frame Spacing), and SOF (Start of frame)      
+
+After the ACK field comes the End of Frame. The **End of Frame** is actually a collection of _7 recessive_ states. And after that comes the **IFS** which stands for Inter Frame Spacing. That is actually the collection of _3 recessives_ States. Hence, collectively 10 recessive states before the Bus becomes Idle. It means, if a node is waiting to transmit it has to find Idle bus. So, when it listens all these recessive states. It actually concludes that bus is Idle.    
+
+<img src="../images/image219.png" alt="End of Frame, Inter Frame Spacing, and Start of frame in a CAN">         
       
-You can find out that by going to `it.c` and toggle a GPIO before and after `HAL_TIM_IRQHandler(&timer6)` (make the GPIO high before `HAL_TIM_IRQHandler(&timer6)` and after  and find out the gap between those 2 transitions. Which will give you the amount of time required to process this function. That is the bottleneck.
+> [!NOTE]       
+> 10 recessive states (EOF + IFS) forms tail of a CAN frame, after this only a Node which is listening to the bus understands that bus is idle. Therefore any dominant bit head after IFS is considered as SOF (Start of Frame)      
+
+SOF - The signle dominant start of frame (SOF) bit marks the start of a message, and is used to synchronize the node on a bus after being idle            
+
+<img src="../images/image220.png" alt="Start of Frame SOF">       
+
+### Remote Frame     
+     
+The Remote frame is used to send requests to some other Node, to ask for data / some information.     
+     
+- The intended purpose of the remote frame is to solicit the transmission of data from another node.      
+       
+- The remote frame is similar to the data frame, with the two important differences. First, this type of message is explicitly marked as a remote frame by a recessive RTR bit in the arbitration field and secondly, there is no data as this is just a request.      
+      
+Let's have an example,   
+- If say, Node A transmits a remote frame with the Arbitration field set to 123. Then Node B, if properly initialized, might respond with a Data Frame with the Arbitration Field also set to 123.      
+- Remote frames can be used to implement request and response type communication between Nodes.      
+- Most CAN controllers can be programmed to automatically respond to Remote Frame.     
+- **In the Remote Frame, RTR Bit is recessive And there is no data.**           
+<img src="../images/image221.png" alt="Remote Frame">              
+
+## Bus access from Multiple Nodes            
+      
+The CAN communication protocol is a carrier-sense, multiple-access protocol with collision detection and arbitration on message priority (CSMA/CD+AMP). AMP stands for Arbitration on message priority.       
+      
+CSMA means that each node on a bus must wait for a prescribed period of inactivity before attempting to send a message (That inactivity is sensed because of the continuous recessive states like End of Frame and IFS). CD+AMP means that collisions are resolved through the bit-wise arbitration, based on a preprogramed priority of each message in the identifier field of a message.       
+      
+The higher priority identifier always wins the bus access.      
+      
+### Bitwise Bus Arbitration      
+
+let's consider three nodes here, NODE-1, NODE-2 and NODE-3 and have there Arbitration IDs (11-bit identifiers) as shown below.      
+       
+<img src="../images/image222.png" alt="Bitwise Bus Arbitration">         
+     
+If all these Nodes try to access the CAN bus at the same time, NODE 3 is going to win the bus arbitration, because it has the lowest 11 bit identifier (`0x659`) as lower the arbitration ID number, higher is the priority.   
+     
+As shown below in the diagram we have 3 Nodes, and Bus state. All 3 Nodes are trying to send a message at the same time as they find that the Bus is idle. Every frame start with the a dominat bit (SOF). After that they all put the first bit (MSB) of the arbitration ID which happens to be 1, 1, 1 for all three nodes. After that the Bus state  becomes recessive because all 3 Nodes have put recessive bit. Again they put 1 1 1 and state will remain recessive. Next, they all put 0 0 0 twice which is dominant state. Hence the bus state becomes dominant. Next they put recessive bits 1 1 1. Next at 5th bit NODE-2 looses arbitration.      
+
+<img src="../images/image223.png" alt="Bitwise Bus Arbitration">          
+       
+As NODE-2 was trying to put the recessive bit whereas NODE-1 and NODE-3 were putting dominant bit. Therefore NODE-2 goes out of arbitration as the bus state became dominant. 
+          
+<img src="../images/image224.png" alt="Functional block diagram">          
+          
+As you Remember, in CAN transceiver, whatever a Node puts on the bus, it also hears it back. So, NODE-2 actually put the recessive state (means the potential differences between CANH and CANL is zero). However it hears back the potential difference of two. And it understands that it lost the arbitration. So, that's why it will just go to the Listen Only mode. It will not try to compete with NODE-1 and NODE-3.    
+       
+Now the arbitration continues between NODE-1 and NODE-3 until 2nd bit where Node-1 is trying to put the recessive bit  NODE-3 put the dominant bit. Therefore NODE-3 wins the arbitration and NODE-1 loses. Consequently NODE-1 goes to listen only mode.          
+             
+<img src="../images/image225.png" alt="Bitwise Bus Arbitration and winner is NODE-3">
+
+After that there are no more devices, so NODE-3 continues to put its remaining bits of the identifier field and finally the RTR and after that it sends the Data. Thats how a node which has the lowest identifier value wins the bus arbitration. That also means that an identifier consisting entirely of zeroes is the highest priority message on a network, because it hold the bus dominant the longest.
+        
+> [!NOTE]     
+> A dominant bit always overrides recessive bit on a CAN bus and the allocation of message priority is up to you (up to the application writer). However all these arbitration will happen automatically by the controller itself. You just have to allocate the priority values.
+                                
+
+
+
+   
+
