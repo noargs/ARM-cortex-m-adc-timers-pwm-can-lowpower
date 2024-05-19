@@ -298,7 +298,81 @@ After that there are no more devices, so NODE-3 continues to put its remaining b
         
 > [!NOTE]     
 > A dominant bit always overrides recessive bit on a CAN bus and the allocation of message priority is up to you (up to the application writer). However all these arbitration will happen automatically by the controller itself. You just have to allocate the priority values.
-                                
+
+
+# STM32 bxCAN intro      
+
+In reference manual go to **30 Controller area netwrok (bxCAN)** _page: 1046_ section. It gives you full details on the bxCAN peripheral of the STM32 microcontroller. As How to handle the transmission? How to handle the reception? What are the interrupts triggered by the bxCAN? and what are the features available like acceptance filtering etc.   
+     
+### ST's bxCAN controller      
+
+The bxCAN (Basic extended CAN) module handles the transmission and reception of CAN messages fully autonomously. Standard identifiers (11-bit) and extended identifiers (29-bit) are fully supported by the hardware.         
+     
+### ST's bxCAN features      
+      
+- This microcontroller (NUCLEO-F446RE) has got 2 CAN controllers available CAN1 and CAN2.     
+- CAN1 is called Master bxCAN and all the other CAN controllers are called as slave. Hence, CAN2 is a slave.     
+- Both, CAN1 and CAN2, supports CAN protocol version 2.0A and 2.0B (You can use this peripheral in a Standard CAN network also and Extended CAN network).       
+- You can achieve bit rates up to 1 Mbps (This depends on your clock period and other clock related details).      
+- Three transmit mailboxes are available to transmit CAN messages (mailboxes means there is a transmit mailbox hardware, which can hold one CAN message at one time. As we have Three transmit mailboxes. Hence you can put three CAN messages into three transmit mailboxes and you can trigger the transmission).      
+- Now, the each peripheral has got 2 receive FIFOs with three stages.        
+- And 28 filter banks which are shared between CAN1 and CAN2.       
+      
+### What application can do with bxCAN?
+
+- If you are an application developer,  you can configure CAN parameters like the _bit rate_, _bit timings_, etc.    
+- You can trigger the transmissions.         
+- You can handle the receptions (where you get an interrupt and you go to the CAN ISR, read the FIFO. However all the receptions, filtering and moving data to the FIFO, everything is taken care of by the hardware)     
+- You can manage interrupts (Whenever transmission, receptions is completed, alternatively when error occurs). You just have to manage those ISRs.     
+- And finally, get some diagnostic information of the CAN Bus.      
+
+### bxCAN block diagram     
+
+Refer to RM: Figure 384, Dual CAN block diagram at page: 1048             
+
+<img src="../images/image226.png" alt=" Figure 384, Dual CAN block diagram at page: 1048">
+
+This is a dual CAN block diagram. As this microcontroller has dual CAN means it has 2 CAN controllers. One is CAN1 (Master) and other is CAN2 (Slave).       
+       
+> [!NOTE]      
+> It feels quite misleading terminologies used in terms of CAN. When you hear master and slave because you already know that, CAN is not a master and slave based communication. As CAN is multi master communication. However, in CubeMX software or in the reference manual, it says CAN1 master and CAN2 peripheral as slave. Because of the features available in those CAN controllers. As in the case of ST, CAN2 has no direct access to the SRAM memory. And some of the features if you want to enable in CAN2, you have to take the help of CAN1. So, that's why CAN1 is called as master (If you want to use CAN2 peripheral then you have to enable CAN1 peripheral first). But in terms of implementation of CAN specification, CAN1 and CAN2 are same. Both are 2.0 A B specification based controllers.       
+       
+For example, In the reference manual it is mentioned that CAN1 is master bxCAN, for managing the communication between slave bxCAN and the 512 bytes of SRAM memory. So, CAN2 is a slave bxCAN with no direct access to the SRAM memory.    
+      
+As you can see on above diagram, both CAN has got their own transmit mailboxes. For example Master has got **three mailboxes** which is used to transmit a CAN message. You just have to put a CAN message in one of these mailboxes or you can put three Tx messages into these three mailboxes and utlimately trigger the transmission. Similarly, slave has also got three mailboxes.      
+      
+Now, master has got 2 receive **FIFOs**, FIFO 0 and FIFO 1 same as slave has also got FIFO0 and FIFO1. It has got space for three CAN messages and If the fourth one comes then there will be an over run. However you can see, in between, There is something called **acceptance filtering** which as its name indicates, filters the CAN message based on your rules. And these acceptance filters have 28 filter banks. Each filter bank has two filters. However, these acceptance filters are shared between master and slave. Therefore if slave wants to use that then you have to enable the master.      
+     
+On the left handside of the diagram shows, all the **Control, Status, Configuration** registers like Master control, Master status, Tx status, Rx FIFO 0 Status register etc.     
+     
+Apart from Specification 2.0 A B implementation which is mandatory implementation, ST has given its own design in their microcontroller which includes, three Tx mailboxes, receive FIFOs, acceptance filtering and also there you will find one transmission scheduler (that is required as when you keep all the messages in the mailboxes and when you trigger the transmission then transmission schedular have to check, which message has got higher priority, ultimately schedule that message first. Finally, the CAN controller should participate in the arbitration and if arbitration wins, then the CAN controller is going to transmit that message.        
+         
+## bxCAN Test modes          
+      
+The bxCAN peripheral of the STs microcontroller, comes with three test mode, **Silent Mode**, **Loop back Mode** and **Silent+ Loop Back Mode**. This is basically to test your CAN controller before you introduce that into the CAN network.     
+
+<img src="../images/image227.png" alt=" Three test modes of bxCAN peripheral in ST's microcontroller">       
+     
+### Silent mode     
+
+- CAN_Tx is separated from the Tx and CAN_Tx line is internally looped back to Rx line    
+- CAN Tx is held at recessive state (always maintained at logical 1)     
+- bxCAN is able to receive valid frames      
+- It just listens and doesn't change the bus state by putting dominant bit.      
+- Can be used as a sniffer which just analyses the traffic on the bus      
+
+### Loop Back mode     
+     
+- bxCAN can transmit frames on the bus.    
+- Also the frames are looped back to the Rx line internally.     
+- bxCAN will not listen to the bus, but just receives its own message which is looped back.     
+- loop back mode is provided for self test functions       
+
+### Silent Loop Back mode     
+
+- bxCAN controller is totally disconnected from the bus.    
+- It neither transmits nor listens to the bus
+- Tx is internally looped back to the Rx, hence receives its own messages.        
 
 
 
