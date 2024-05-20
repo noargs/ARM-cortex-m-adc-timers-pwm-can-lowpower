@@ -7,6 +7,7 @@ void SystemClock_Config_HSE(uint8_t clock_freq);
 void GPIO_Init(void);
 void Error_handler(void);
 void CAN1_Init(void);
+void CAN1_Tx(void);
 
 CAN_HandleTypeDef hcan1;
 
@@ -16,6 +17,8 @@ int main(void)
   SystemClock_Config_HSE(SYS_CLOCK_FREQ_50_MHZ);
   GPIO_Init();
   CAN1_Init();
+  HAL_CAN_Start(&hcan1);
+  CAN1_Tx();
 
   while (1);
 
@@ -119,6 +122,53 @@ void GPIO_Init(void)
   led_gpio.Mode = GPIO_MODE_OUTPUT_PP;
   led_gpio.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &led_gpio);
+}
+
+void CAN1_Init(void)
+{
+  hcan1.Instance = CAN1;
+  hcan1.Init.Mode = CAN_MODE_LOOPBACK;
+  hcan1.Init.AutoBusOff = DISABLE;
+  hcan1.Init.AutoRetransmission = ENABLE;
+  hcan1.Init.AutoWakeUp = DISABLE;
+  hcan1.Init.ReceiveFifoLocked = DISABLE;
+  hcan1.Init.TimeTriggeredMode = DISABLE;
+  hcan1.Init.TransmitFifoPriority = DISABLE;
+
+  // Settings related to CAN bit timings
+  hcan1.Init.Prescaler = 5;
+  hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
+  hcan1.Init.TimeSeg1 = CAN_BS1_8TQ;
+  hcan1.Init.TimeSeg2 = CAN_BS2_1TQ;
+
+  if (HAL_CAN_Init(&hcan1) != HAL_OK)
+  {
+	Error_handler();
+  }
+}
+
+void CAN1_Tx(void)
+{
+  CAN_TxHeaderTypeDef tx_header;
+  tx_header.DLC = 5;
+  tx_header.StdId = 0x65D;
+  tx_header.IDE = CAN_ID_STD;
+  tx_header.RTR = CAN_RTR_DATA;
+
+  uint8_t our_message[5] = {'H', 'E', 'L', 'L', 'O'};
+  uint32_t tx_mailbox;
+
+  if (HAL_CAN_AddTxMessage(&hcan1, &tx_header, our_message, &tx_mailbox) != HAL_OK)
+  {
+	Error_handler();
+  }
+
+  while (HAL_CAN_IsTxMessagePending(&hcan1, tx_mailbox));
+
+  char msg[50];
+  sprintf(msg, "Message transmitted\r\n");
+  HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
+
 }
 
 void Error_handler(void)
