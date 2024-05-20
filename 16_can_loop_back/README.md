@@ -301,15 +301,26 @@ If you are using transceiver.
 <img src="../images/image241.png" alt="Loop Back mode connection with transceiver">  
     
 Below, you can see that transceiver **SN65HVD230** (transceiver chip made by TI or others have NXP which is also good) gives you 4 pins for connecting 3.3V to DC and ground and CAN_RX and CAN_TX. And then it gives you 2 pins, that is CAN_H and CAN_L.      
+           
+<img src="../images/image242.jpg" alt="Schematic of _SN65HVD230_"> 
      
 We just need a transceiver which converts _Single ended_ signal to the _Differential_ signal.   
     
 > [!NOTE]      
 > This tranceiver already comes with 120 ohm resistor which connects CANH to CANL internally. You need to connect it. As shown in the schematic of _SN65HVD230_ CANH and CANL is connected by 120 OHM resistor (part number 120)       
       
-<img src="../images/image242.jpg" alt="Schematic of _SN65HVD230_">       
+Please check your transceiver if it indeed has 121 OHM resistor.     
 
-Please check your transceiver if it ineed has 121 OHM resistor.    
+You can use logic analyser and connect it to CAN_TX. if you have USB logic analyser then check if it support analogue signal and then you can connect to CANH. Alternatively if you have digital oscilloscope then you can use that. Now go Saele software and choose CAN and _Bit Rate (Bits/s)_ as **500000** for _500KBps_     
+
+> [!NOTE]     
+> According to our discussion, if there is no ACK and NART bit is set to 0 (auto re-transmission enabled) and if there is no ACK then the controller will automatically re-transmit the message. **However that is not true in the loop back mode, Hence in the loop mode acknowledge errors will be ignored. And no dominant bit sampled in the acknowledge slot of a data or remote frame in loop back mode.**       
+
+And if you want to find out what is the bit rate of Start of frame (SOF, Which is first dominant bit), You should find this as two microseconds (2us), in other words bit rate is 500kbps. Moreover for normal operation ACK field must be dominant, However in our trace it is recessaive as we are in loop back mode.     
+
+You can read more about bxCAN in **30.5.3 Loop back mode** at _page 1051_ in the RF.                    
+     
+     
 
 
 
