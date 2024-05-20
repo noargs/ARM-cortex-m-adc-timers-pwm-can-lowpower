@@ -307,10 +307,10 @@ We just need a transceiver which converts _Single ended_ signal to the _Differen
 > [!NOTE]      
 > This tranceiver already comes with 120 ohm resistor which connects CANH to CANL internally. You need to connect it. As shown in the schematic of _SN65HVD230_ CANH and CANL is connected by 120 OHM resistor (part number 120)       
       
-<img src="../images/image242.png" alt="Schematic of _SN65HVD230_">       
+<img src="../images/image242.jpg" alt="Schematic of _SN65HVD230_">       
 
 Please check your transceiver if it ineed has 121 OHM resistor.    
-      
-                      
+
+
 
    
