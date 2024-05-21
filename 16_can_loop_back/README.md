@@ -316,7 +316,7 @@ Please check your transceiver if it indeed has 121 OHM resistor.
 
 You can use logic analyser and connect it to CAN_TX. if you have USB logic analyser then check if it support analogue signal and then you can connect to CANH. Alternatively if you have digital oscilloscope then you can use that. Now go _Saleae_'s software (_Logic 2_) and choose CAN and _Bit Rate (Bits/s)_ as **500000** for _500KBps_. According to their [page](https://support.saleae.com/protocol-analyzers/analyzer-user-guides/using-can), "the Saleae devices only have single-ended inputs (CAN_TX and CAN_RX) and not differential inputs (CANH and CANL), the ideal way to record a CAN signal is after it has been converted to single-ended (at NUCLEO-F446Re side before transceiver). If your design already includes CAN transceivers, you might be able to simply attach the probe on the single-ended side."        
            
-<img src="../images/image243.jpg" alt="Saleae Logic Analyser Trace of CAN_TX with Logic2 software"> 
+<img src="../images/image243.png" alt="Saleae Logic Analyser Trace of CAN_TX with Logic2 software"> 
            
 > [!NOTE]     
 > According to our discussion, if there is no ACK and NART bit is set to 0 (auto re-transmission enabled) and if there is no ACK then the controller will automatically re-transmit the message. **However that is not true in the loop back mode, Hence in the loop mode acknowledge errors will be ignored. And no dominant bit sampled in the acknowledge slot of a data or remote frame in loop back mode.**       
