@@ -281,12 +281,15 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef *hcan)
    */
   gpio_can.Pin = GPIO_PIN_11 | GPIO_PIN_12;
   gpio_can.Mode = GPIO_MODE_AF_PP;
-  gpio_can.Pull = GPIO_NOPULL;
+  gpio_can.Pull = GPIO_PULLUP;
   gpio_can.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   gpio_can.Alternate = GPIO_AF9_CAN1;
   HAL_GPIO_Init(GPIOA, &gpio_can);
 }
-```        
+```      
+
+> [!IMPORTANT]      
+> CAN_TX and CAN_RX have to be pulled up as says in [stackoverflow](https://electronics.stackexchange.com/questions/353005/can-initialization-timeout-error-in-stm32f4/353101). If `GPIO_NOPULL` is given then CAN Timeout error will occur.        
 
 ## Loop Back mode connection (Without Transceiver)    
       
@@ -307,12 +310,14 @@ Below, you can see that transceiver **SN65HVD230** (transceiver chip made by TI 
 We just need a transceiver which converts _Single ended_ signal to the _Differential_ signal.   
     
 > [!NOTE]      
-> This tranceiver already comes with 120 ohm resistor which connects CANH to CANL internally. You need to connect it. As shown in the schematic of _SN65HVD230_ CANH and CANL is connected by 120 OHM resistor (part number 120)       
+> This tranceiver already comes with 120 ohm resistor which connects CANH to CANL internally. Hence, You dont need to connect it. As shown in the schematic of _SN65HVD230_ CANH and CANL is connected by 120 OHM resistor (part number 120)       
       
 Please check your transceiver if it indeed has 121 OHM resistor.     
 
-You can use logic analyser and connect it to CAN_TX. if you have USB logic analyser then check if it support analogue signal and then you can connect to CANH. Alternatively if you have digital oscilloscope then you can use that. Now go Saele software and choose CAN and _Bit Rate (Bits/s)_ as **500000** for _500KBps_     
-
+You can use logic analyser and connect it to CAN_TX. if you have USB logic analyser then check if it support analogue signal and then you can connect to CANH. Alternatively if you have digital oscilloscope then you can use that. Now go _Saleae_'s software (_Logic 2_) and choose CAN and _Bit Rate (Bits/s)_ as **500000** for _500KBps_. According to their [page](https://support.saleae.com/protocol-analyzers/analyzer-user-guides/using-can), "the Saleae devices only have single-ended inputs (CAN_TX and CAN_RX) and not differential inputs (CANH and CANL), the ideal way to record a CAN signal is after it has been converted to single-ended (at NUCLEO-F446Re side before transceiver). If your design already includes CAN transceivers, you might be able to simply attach the probe on the single-ended side."        
+           
+<img src="../images/image243.jpg" alt="Saleae Logic Analyser Trace of CAN_TX with Logic2 software"> 
+           
 > [!NOTE]     
 > According to our discussion, if there is no ACK and NART bit is set to 0 (auto re-transmission enabled) and if there is no ACK then the controller will automatically re-transmit the message. **However that is not true in the loop back mode, Hence in the loop mode acknowledge errors will be ignored. And no dominant bit sampled in the acknowledge slot of a data or remote frame in loop back mode.**       
 
@@ -320,7 +325,7 @@ And if you want to find out what is the bit rate of Start of frame (SOF, Which i
 
 You can read more about bxCAN in **30.5.3 Loop back mode** at _page 1051_ in the RF.                    
      
-     
+
 
 
 

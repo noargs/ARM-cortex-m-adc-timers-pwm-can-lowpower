@@ -6,16 +6,19 @@
 void SystemClock_Config_HSE(uint8_t clock_freq);
 void GPIO_Init(void);
 void Error_handler(void);
+void UART2_Init(void);
 void CAN1_Init(void);
 void CAN1_Tx(void);
 
 CAN_HandleTypeDef hcan1;
+UART_HandleTypeDef huart2;
 
 int main(void)
 {
   HAL_Init();
   SystemClock_Config_HSE(SYS_CLOCK_FREQ_50_MHZ);
   GPIO_Init();
+  UART2_Init();
   CAN1_Init();
   HAL_CAN_Start(&hcan1);
   CAN1_Tx();
@@ -103,7 +106,7 @@ void SystemClock_Config_HSE(uint8_t clock_freq)
 
 
   /*Configure the systick timer interrupt frequency (for every 1 ms) */
-	  uint32_t hclk_freq = HAL_RCC_GetHCLKFreq();
+  uint32_t hclk_freq = HAL_RCC_GetHCLKFreq();
   HAL_SYSTICK_Config(hclk_freq/1000);
 
   /**Configure the Systick
@@ -150,10 +153,10 @@ void CAN1_Init(void)
 void CAN1_Tx(void)
 {
   CAN_TxHeaderTypeDef tx_header;
-  tx_header.DLC = 5;
+  tx_header.DLC = 5;               // how many bytes want to send
   tx_header.StdId = 0x65D;
   tx_header.IDE = CAN_ID_STD;
-  tx_header.RTR = CAN_RTR_DATA;
+  tx_header.RTR = CAN_RTR_DATA;    // Data frame or Request frame (Remote frame also called Request frame)
 
   uint8_t our_message[5] = {'H', 'E', 'L', 'L', 'O'};
   uint32_t tx_mailbox;
@@ -169,6 +172,21 @@ void CAN1_Tx(void)
   sprintf(msg, "Message transmitted\r\n");
   HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
 
+}
+
+void UART2_Init(void)
+{
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 115200;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  if (HAL_UART_Init(&huart2) != HAL_OK)
+  {
+	Error_handler();
+  }
 }
 
 void Error_handler(void)
