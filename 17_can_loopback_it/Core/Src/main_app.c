@@ -140,7 +140,7 @@ void CAN1_Init(void)
 {
   hcan1.Instance = CAN1;
   hcan1.Init.Mode = CAN_MODE_LOOPBACK;
-  hcan1.Init.AutoBusOff = DISABLE;
+  hcan1.Init.AutoBusOff = ENABLE;
   hcan1.Init.AutoRetransmission = ENABLE;
   hcan1.Init.AutoWakeUp = DISABLE;
   hcan1.Init.ReceiveFifoLocked = DISABLE;
