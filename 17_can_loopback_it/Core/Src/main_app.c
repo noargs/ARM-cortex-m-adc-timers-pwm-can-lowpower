@@ -9,7 +9,6 @@ void Error_handler(void);
 void UART2_Init(void);
 void CAN1_Init(void);
 void CAN1_Tx(void);
-void CAN1_Rx(void);
 void CAN_FilterConfig(void);
 
 CAN_HandleTypeDef hcan1;
@@ -176,24 +175,6 @@ void CAN1_Tx(void)
   {
 	Error_handler();
   }
-}
-
-void CAN1_Rx(void)
-{
-  CAN_RxHeaderTypeDef rx_header;
-  uint8_t rcvd_msg[5];
-
-  // wait till at least one message into the Rx FIFO0
-  while(!HAL_CAN_GetRxFifoFillLevel(&hcan1, CAN_RX_FIFO0));
-
-  if (HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, &rx_header, rcvd_msg) != HAL_OK)
-  {
-	Error_handler();
-  }
-
-  char msg[50];
-  sprintf(msg, "Message received: %s\r\n", rcvd_msg);
-  HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
 }
 
 void CAN_FilterConfig(void)
