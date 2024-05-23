@@ -488,7 +488,7 @@ For `FilterFIFOAssignment` you have to a guide the message from Filter Bank and 
      
 `FilterBank`, there are 28 filter banks are available. You can use one among them. if you are using only one CAN peripheral then, there are 14 filter banks are available. Mask mode or ID mode, you have to mention here. So two modes are available.    
       
-`FilterScale` there are two scale. One is 32 bit scale and 16 bit scale. So, need not to worry about 16 bit scale. Always use 32 bit scale. If you use 32 bit scale, then register will be treated as 32 bit register. Otherwise, it will be treated as 16 bit registers. This is there to increase the scale of a filter bank for some advanced application scale and filter activation.    
+`FilterScale` there are two scale. One is 32 bit scale and 16 bit scale. So, need not to worry about 16 bit scale. Always use 32 bit scale. If you use 32 bit scale, then register will be treated as 32 bit register. Otherwise, it will be treated as 16 bit registers. This is there to increase the scale of a filter bank for some advanced application scale and filter activation. Consult RM **page: 1057**, Figure 391. _Filter bank scale configuration - Register organization_   
       
 If you are using dual CAN (CAN1 and CAN2), only then `SlaveStartFilterBank` makes sense. For single CAN instances this parameter is meaningless. For dual CAN instances, there are 28 filter banks will be shared between CAN1 and CAN2. So, you have to mention from where that sharing starts.      
       
