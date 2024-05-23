@@ -212,7 +212,7 @@ void CAN_FilterConfig(void)
 
   /*
    * by default 32-bit and R1(ID), R2(MASK) register will each considered as 32 bit
-   * if 16-bit filter scale selected then R1(ID), R1(MASK), R2(ID), and R2(MASK) register
+   * if 16-bit filter scale selected then R1(ID), R1(MASK), R2(ID), and R2(MASK) registers
    * each 16 bit wide
    */
   can1_filter.FilterScale = CAN_FILTERSCALE_32BIT;
