@@ -135,7 +135,7 @@ As our clock is running at 25 MHz and we followed the following table first row,
 <img src="../images/image237.png" alt="time quantas calculation table at 25MHz">            
        
        
-### bxCAN Tx-Path Block Diagram      
+# bxCAN Tx-Path Block Diagram      
 
 - Three transmit mailboxes are provided to the software for setting up messages.      
 - The transmission Scheduler decides which mailbox has to be transmitted first.    
@@ -323,8 +323,181 @@ You can use logic analyser and connect it to CAN_TX. if you have USB logic analy
 
 And if you want to find out what is the bit rate of Start of frame (SOF, Which is first dominant bit), You should find this as two microseconds (2us), in other words bit rate is 500kbps. Moreover for normal operation ACK field must be dominant, However in our trace it is recessaive as we are in loop back mode.     
 
-You can read more about bxCAN in **30.5.3 Loop back mode** at _page 1051_ in the RF.                    
+You can read more about bxCAN in **30.5.3 Loop back mode** at _page 1051_ in the RF.       
+
+# bxCAN Rx-Path           
      
+You can see the CAN Rx Path in the diagram below, whenever CAN message comes over the CAN Rx pin. It has to pass through the **Acceptance Filter banks** to filter out the messages. These filters, you can configure using your software. The received messages will be checked against the filtering rules. If all the rules are met. Then only that message is allowed to occupy the FIFO and interrupt will be triggered in the application to read that message. On the other hand those messages which are not actually qualified to meet filtering rules, will be discarded by the receive engine of the CAN controller (Consequently, not occupy the FIFO and interrupts will not be generated).  
+           
+<img src="../images/image244.png" alt="Rx-Path block diagram">       
+     
+> [!NOTE]  
+> These filtering rules are very important as CAN is a broadcast type system, where each node hears everything which is there on the CAN bus. If a CAN controller allows all the messages to go into the FIFO, for example, in which the application is not interested then processor will get continuous interrupts and there will be a huge overhead for the application. Hence the filtering engine is introduced in between to filter out those messages.      
+     
+Filtering is not something specific to the CAN. It is there in many important communication protocols like Bluetooth, zigbee etc.      
+     
+- There are two receive FIFOs and they are used by each CAN controller to store the incoming messages (2 FIFOs for CAN1 and 2 for CAN2).     
+- Three complete CAN messages can be stored in each FIFO.      
+- The FIFOs are managed completely by the hardware.    
+      
+### Rx Filtering     
+     
+- The controller will read any frames it sees on the bus and the controller and hold them in a small FIFO memory. It will notify the host processor that this data is available which the processor then reads from the controller.    
+- The controller also contains the hardware filter mechanism that can be programmed to ignore and discard those CAN frames that you dont want to passed to the processor. This saves processor overhead.      
+- Acceptance filtering is introduced to manage the frame reception.        
+      
+## Acceptance Filtering     
+     
+- There are 28 filter banks shared between Master bxCAN (CAN1) and slave bxCAN (CAN2) controllers.    
+- Each Filter bank has 2, 32 bit associated filter registers.     
+- You can use filter banks to filter the incoming messages.      
+     
+Let's see some examples. There are 28 filter banks. Each bank has two registers. One is called as R1, another one is called R2 and both are 32 bit registers and by using these registers you can put filtering rules.     
+     
+<img src="../images/image245.png" alt="Acceptance filtering; 28 filters banks each with two registers">      
+      
+### Frame Acceptance Rules.     
+    
+These can be any rules, however given given below are some rule to give you an idea.   
+     
+- Accept frames only if first 3 msbs of the standard identifier are 1s e.g. 111xxxxx    
+- Accept frames only if first 3 msbs of the standard identifier are 0s and last 2 lsbs are 1s.   
+- Accept frames only if a standard identifier value is equal to 0x65D or 0x651.    
+- Accept only a Request frames      
+- Accept only Extended ID frames      
+- Accept all frames.     
+     
+Its really application dependent as what exactly you want to achieve.  
+     
+Let's consider:   
+**Accept frames only if first 3 msbs of the standard identifier are 1s e.g. 111xxxx**       
+
+We have 28 filter banks, let's conside _Filter Bank 0_, each filter bank comes with its own 2 filter registers (For us its **FB0_R1** and **FB0_R2**, both are 32 bit registers). 
+A message comes into the CAN RX and the message has the standard identifier, 110 1001 0001 (0x691) 11 bits in total, and go through the _Filter Bank 0_. In other word it will go through the filtering, which is imposed by _Filter Bank 0_.      
+The Filter Banks can be kept in several modes i.e. Mask Mode, List/ID Mode etc. However When you keep the _Filter Bank 0_ in Mask Mode, then the definition of these registers will change. Now, the FB0_**R1** is treated as _Identifier register_ and FB0_**R2** is treated as _Mask register_ and we have the field Mapping (as shown below).     
+
+<img src="../images/image247.png" alt="Acceptance filtering; Mask mode">     
+
+As our requirement says, accept frame only which have got first 3 msbs as one (111). So, the Mask register is actually used to Mask out the corresponding bits in the ID register. If you make any of the bits in the Mask register as one. The corresponding bit of the Identifier register will be checked against the message received. If bits are exactly same then only that frame will be accepted, otherwise frame will be rejected. For example, I would keep 1 1 1 in Mask Register, as I want to check only first 3 msbs of the Standard Identifier _STD[10:3]_. Rest of the bits in _Mask Register_ will make them 0s as we need not to check. The corresponding bit in the Identifier Register will be matched against the received identifier (110 1001 0001) on CAN_Rx     
+       
+<img src="../images/image248.png" alt="Acceptance filtering; keep first 3 msb 1 in Mask register">        
+        
+As the bits are not matching hence the frame will be discarded by the filter engine and the message will not be forwarded to the FIFO.       
+      
+**Accept frames only if first 3 msbs of the standard identifier are 0s and last 2 lsbs are 1s**      
+
+- Make the first 3 msbs and last 2 lsbs in _Mask Register_ as 1 to indicate the bits you want to test.        
+      
+- And make first 3 msb as 0s and last 2 lsbs as 1 in _Identifier Register_ to indicate thats the bits you want in Standard identifier in a message coming through CAN_Rx.       
+
+<img src="../images/image249.png" alt="Acceptance filtering; keep first 3 msb 0s and last 2 lsb as 1 in Mask register">              
+
+As bits in received identifier matches with the bits in Identifier Register, Hence frame will be allowed.     
+     
+**Accept frames only if standard identifier value exactly equal to 0x65D or 0x651**      
+    
+This example can be done using Mask mode. However there is another mode called _List Mode_ or _ID Mode_. The only difference is, R1 and R2 register is no longer present instead they are called ID1 and ID2 registers, to configure the expected identifier value. We better off using ID Mode for this rule. We will keep 0x65D in ID1 register and 0x651 in ID2 register. When the message come first identifier value will be checked against the ID register 1, If it is exactly matching then frame will be allowed, if not matching then it will be checked against ID register 2 and so on.          
+
+<img src="../images/image250.png" alt="Acceptance filtering; List Mode">               
+       
+**Accept only request frames**      
+    
+In CAN protocol when RTR is 0 (Dominant), it's a Data frame and If RTR is equal to 1 (Recessive), it's a Remote frame. We will implement this with _Mask Mode_ and keep _Mask Register_ at the place of RTR bit as 1 to indicate the testing and _Identifier Register_ as 1 to indicate the value we want.     
+     
+<img src="../images/image251.png" alt="RTR field as Recessive (1), to accept only Request/Remote frame">      
+      
+**Accept only Extended ID frames**         
+      
+In CAN protocol there is a bit called IDE (ID Extension).     
+    
+- IDE is dominant (0) for 11 bit Identifier frames.     
+- IDE is recessive (1) for 29 bit identifier frames.     
+     
+<img src="../images/image252.png" alt="IDE bit Recessive (1), to accept only Extended ID frame">      
+      
+**Accept all frames**      
+      
+You need not to configure the filter at all. You only have to configure which FIFO message should go. Keep the all the _Mask bits_ in the _Mask mode_ 0s so none of the bits will be compared and all the frames will be forwarded to the configured FIFO without filtering.      
+        
+Now we have to implement the filter config using our code and STM32 Cube gives many Data structure to configure the filter (`HAL_CAN_ConfigFilter()`) of the CAN controller. In that data structure, you have to tell:       
+      
+- What is the filter bank you want to use?      
+- what is the mode of the filter bank i.e. Mask mode or ID mode etc      
+- And you have to configured to which FIFO, the filter bank should forword that message, received message or filtered message.     
+Otherwise your application will not work.      
+
+`HAL_CAN_ConfigFilter()` takes two argument, one is handle to CAN and second one to give you place to stick in your configuration `CAN_FilterTypeDef`        
+
+```c
+typedef struct
+{
+  uint32_t FilterIdHigh;          /*!< Specifies the filter identification number (MSBs for a 32-bit
+                                       configuration, first one for a 16-bit configuration).
+                                       This parameter must be a number between
+                                       Min_Data = 0x0000 and Max_Data = 0xFFFF. */
+
+  uint32_t FilterIdLow;           /*!< Specifies the filter identification number (LSBs for a 32-bit
+                                       configuration, second one for a 16-bit configuration).
+                                       This parameter must be a number between
+                                       Min_Data = 0x0000 and Max_Data = 0xFFFF. */
+
+  uint32_t FilterMaskIdHigh;      /*!< Specifies the filter mask number or identification number,
+                                       according to the mode (MSBs for a 32-bit configuration,
+                                       first one for a 16-bit configuration).
+                                       This parameter must be a number between
+                                       Min_Data = 0x0000 and Max_Data = 0xFFFF. */
+
+  uint32_t FilterMaskIdLow;       /*!< Specifies the filter mask number or identification number,
+                                       according to the mode (LSBs for a 32-bit configuration,
+                                       second one for a 16-bit configuration).
+                                       This parameter must be a number between
+                                       Min_Data = 0x0000 and Max_Data = 0xFFFF. */
+
+  uint32_t FilterFIFOAssignment;  /*!< Specifies the FIFO (0 or 1U) which will be assigned to the filter.
+                                       This parameter can be a value of @ref CAN_filter_FIFO */
+
+  uint32_t FilterBank;            /*!< Specifies the filter bank which will be initialized.
+                                       For single CAN instance(14 dedicated filter banks),
+                                       this parameter must be a number between Min_Data = 0 and Max_Data = 13.
+                                       For dual CAN instances(28 filter banks shared),
+                                       this parameter must be a number between Min_Data = 0 and Max_Data = 27. */
+
+  uint32_t FilterMode;            /*!< Specifies the filter mode to be initialized.
+                                       This parameter can be a value of @ref CAN_filter_mode */
+
+  uint32_t FilterScale;           /*!< Specifies the filter scale.
+                                       This parameter can be a value of @ref CAN_filter_scale */
+
+  uint32_t FilterActivation;      /*!< Enable or disable the filter.
+                                       This parameter can be a value of @ref CAN_filter_activation */
+
+  uint32_t SlaveStartFilterBank;  /*!< Select the start filter bank for the slave CAN instance.
+                                       For single CAN instances, this parameter is meaningless.
+                                       For dual CAN instances, all filter banks with lower index are assigned to master
+                                       CAN instance, whereas all filter banks with greater index are assigned to slave
+                                       CAN instance.
+                                       This parameter must be a number between Min_Data = 0 and Max_Data = 27. */
+} 
+```               
+      
+`FilterIdHigh`, `FilterIdLow`, `FilterMaskIdHigh`, and `FilterMaskIdLow` can be seen in the picture below.       
+     
+<img src="../images/image253.png" alt="Filter ID high/low and Filter Mask high/low registers">      
+      
+For `FilterFIFOAssignment` you have to a guide the message from Filter Bank and pick 0 or 1 FIFO, one among the FIFOs you have to use.      
+     
+`FilterBank`, there are 28 filter banks are available. You can use one among them. if you are using only one CAN peripheral then, there are 14 filter banks are available. Mask mode or ID mode, you have to mention here. So two modes are available.    
+      
+`FilterScale` there are two scale. One is 32 bit scale and 16 bit scale. So, need not to worry about 16 bit scale. Always use 32 bit scale. If you use 32 bit scale, then register will be treated as 32 bit register. Otherwise, it will be treated as 16 bit registers. This is there to increase the scale of a filter bank for some advanced application scale and filter activation.    
+      
+If you are using dual CAN (CAN1 and CAN2), only then `SlaveStartFilterBank` makes sense. For single CAN instances this parameter is meaningless. For dual CAN instances, there are 28 filter banks will be shared between CAN1 and CAN2. So, you have to mention from where that sharing starts.      
+      
+> [!NOTE]      
+> For our Loop Back application we will use **Accept all frames** and use the **Mask mode**. Keep `FilterIdHigh`, `FilterIdLow`, `FilterMaskIdHigh`, and `FilterMaskIdLow`as 0s. `FilterFIFOAssignment` as Rx FIFO 0. `FilterBank` as 0s, `FilterMode` as Mask mode.       
+
+
+     
+
 
 
 

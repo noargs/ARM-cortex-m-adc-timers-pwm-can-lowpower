@@ -9,6 +9,8 @@ void Error_handler(void);
 void UART2_Init(void);
 void CAN1_Init(void);
 void CAN1_Tx(void);
+void CAN1_Rx(void);
+void CAN_FilterConfig(void);
 
 CAN_HandleTypeDef hcan1;
 UART_HandleTypeDef huart2;
@@ -20,8 +22,13 @@ int main(void)
   GPIO_Init();
   UART2_Init();
   CAN1_Init();
-  HAL_CAN_Start(&hcan1);
+  CAN_FilterConfig();
+  if (HAL_CAN_Start(&hcan1) != HAL_OK)
+  {
+	Error_handler();
+  }
   CAN1_Tx();
+  CAN1_Rx();
 
   while (1);
 
@@ -97,8 +104,6 @@ void SystemClock_Config_HSE(uint8_t clock_freq)
 	Error_handler();
   }
 
-
-
   if (HAL_RCC_ClockConfig(&Clock_Init, flash_latency) != HAL_OK)
   {
 	Error_handler();
@@ -148,6 +153,7 @@ void CAN1_Init(void)
   {
 	Error_handler();
   }
+
 }
 
 void CAN1_Tx(void)
@@ -171,7 +177,50 @@ void CAN1_Tx(void)
   char msg[50];
   sprintf(msg, "Message transmitted\r\n");
   HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
+}
 
+void CAN1_Rx(void)
+{
+  CAN_RxHeaderTypeDef rx_header;
+  uint8_t rcvd_msg[5];
+
+  // wait till at least one message into the Rx FIFO0
+  while(!HAL_CAN_GetRxFifoFillLevel(&hcan1, CAN_RX_FIFO0));
+
+  if (HAL_CAN_GetRxMessage(&hcan1, CAN_RX_FIFO0, &rx_header, rcvd_msg) != HAL_OK)
+  {
+	Error_handler();
+  }
+
+  char msg[50];
+  sprintf(msg, "Message received: %s\r\n", rcvd_msg);
+  HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
+}
+
+void CAN_FilterConfig(void)
+{
+  CAN_FilterTypeDef can1_filter;
+
+  can1_filter.FilterActivation = ENABLE;
+  can1_filter.FilterBank = 0;
+  can1_filter.FilterFIFOAssignment = CAN_RX_FIFO0;
+  can1_filter.FilterIdHigh = 0x0000;
+  can1_filter.FilterIdLow = 0x0000;
+  can1_filter.FilterMaskIdHigh = 0x0000;
+  can1_filter.FilterMaskIdLow = 0x0000;
+  can1_filter.FilterMode = CAN_FILTERMODE_IDMASK;
+
+  /*
+   * by default 32-bit and R1(ID), R2(MASK) register will each considered as 32 bit
+   * if 16-bit filter scale selected then R1(ID), R1(MASK), R2(ID), and R2(MASK) register
+   * each 16 bit wide
+   */
+  can1_filter.FilterScale = CAN_FILTERSCALE_32BIT;
+
+  if (HAL_CAN_ConfigFilter(&hcan1, &can1_filter) != HAL_OK)
+  {
+	Error_handler();
+  }
 }
 
 void UART2_Init(void)
