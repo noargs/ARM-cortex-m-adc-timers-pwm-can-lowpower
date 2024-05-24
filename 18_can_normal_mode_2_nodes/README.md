@@ -18,7 +18,18 @@ N2 will make the bus state as dominant (logic 0) exactly at the ACK position of 
      
 When you transmit a message from N1, it gets transmitted through CAN1_Tx (from N1's PA12 pin) to transciever1's CAN_Tx, all the way through bus to other transciever's CANH to CANL and reaches N2's CAN_Rx. When Node2 started receiving that packet, which is coming over CAN_RX it also calculates the CRC of that packet. And when the CRC from the Node 1 reaches Node 2, it compares the calculated CRC with the received CRC from Node 1. If the CRC matches then N2 concludes that frame or the message which is being received is correct. And not only the CRC, it also checks for other errors like CAN bit errors or any other protocol violation, automatically. If everything is fine then exactly at that ACK position it pushes the dominant bit over CAN TX as shown below. That's the reason you see a logical 0 happening exactly at the ACK field.     
 
-<img src="../images/image278.png" alt="Message transmission from N1 to N2, CRC checks and ACK transmission with dominant bit (1) from N2">                        
+<img src="../images/image278.png" alt="Message transmission from N1 to N2, CRC checks and ACK transmission with dominant bit (1) from N2">     
+
+### Implementing Rx Path    
+
+We will now implement the Rx path in the callback `HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)` Now you know, whenever the message comes into RX FIFO0. then RXFIFO0 interrupt will be triggered and we will come to `HAL_CAN_RxFifo0MsgPendingCallback` And here we have to implement the logic of reception. `HAL_CAN_RxFifo0MsgPendingCallback` will be called automatically when there's some data in FIFO0. As shown in the very first slide, the workflow and iterated below one more time:      
+- N1 sends a message (led number) using Data Frame (RTR==0) for every 1sec to N2   
+- After the reception of message (led number) N2 has to glow the corresponding LED.    
+- N1 also sends a Remote frame (RTR==1) to request 2 bytes of data for every 4 sec.     
+- N2 upon receiving the Remote frame should send back 2 bytes of data using Data frame.     
+- User interrupt driven code     
+
+
      
 
 
