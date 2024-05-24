@@ -137,22 +137,28 @@ void GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
-  GPIO_InitTypeDef led_gpio;
-  led_gpio.Pin = GPIO_PIN_5;
-  led_gpio.Mode = GPIO_MODE_OUTPUT_PP;
-  led_gpio.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA, &led_gpio);
 
-  led_gpio.Pin = GPIO_PIN_9 | GPIO_PIN_8 | GPIO_PIN_6;
-  HAL_GPIO_Init(GPIOC, &led_gpio);
+  GPIO_InitTypeDef ledgpio;
+  ledgpio.Pin = GPIO_PIN_5;
+  ledgpio.Mode = GPIO_MODE_OUTPUT_PP;
+  ledgpio.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOA,&ledgpio);
 
-  led_gpio.Pin = GPIO_PIN_8;
-  led_gpio.Mode = GPIO_MODE_OUTPUT_PP;
-  HAL_GPIO_Init(GPIOB, &led_gpio);
 
-  led_gpio.Pin = GPIO_PIN_13;
-  led_gpio.Mode = GPIO_MODE_IT_FALLING;
-  HAL_GPIO_Init(GPIOC, &led_gpio);
+  ledgpio.Pin = GPIO_PIN_9 | GPIO_PIN_8 | GPIO_PIN_6;
+  ledgpio.Mode = GPIO_MODE_OUTPUT_PP;
+  ledgpio.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOC,&ledgpio);
+
+  ledgpio.Pin = GPIO_PIN_8;
+  ledgpio.Mode = GPIO_MODE_OUTPUT_PP;
+  ledgpio.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOB,&ledgpio);
+
+  ledgpio.Pin = GPIO_PIN_13;
+  ledgpio.Mode = GPIO_MODE_IT_FALLING;
+  ledgpio.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOC,&ledgpio);
 
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 }

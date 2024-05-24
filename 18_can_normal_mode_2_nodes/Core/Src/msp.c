@@ -34,10 +34,10 @@ void HAL_CAN_MspInit(CAN_HandleTypeDef *hcan)
   gpio_can.Alternate = GPIO_AF9_CAN1;
   HAL_GPIO_Init(GPIOA, &gpio_can);
 
-  HAL_NVIC_SetPriority(CAN1_TX_IRQn, 15, 0);
-  HAL_NVIC_SetPriority(CAN1_RX0_IRQn, 15, 0);
-  HAL_NVIC_SetPriority(CAN1_RX1_IRQn, 15, 0);
-  HAL_NVIC_SetPriority(CAN1_SCE_IRQn, 15, 0);
+  HAL_NVIC_SetPriority(CAN1_TX_IRQn,15,0);
+  HAL_NVIC_SetPriority(CAN1_RX0_IRQn,15,0);
+  HAL_NVIC_SetPriority(CAN1_RX1_IRQn,15,0);
+  HAL_NVIC_SetPriority(CAN1_SCE_IRQn,15,0);
 
   HAL_NVIC_EnableIRQ(CAN1_TX_IRQn);
   HAL_NVIC_EnableIRQ(CAN1_RX0_IRQn);
@@ -68,4 +68,16 @@ void HAL_UART_MspInit(UART_HandleTypeDef *huart)
   //3 . Enable the IRQ and set up the priority (NVIC settings )
   HAL_NVIC_EnableIRQ(USART2_IRQn);
   HAL_NVIC_SetPriority(USART2_IRQn,15,0);
+}
+
+void HAL_TIM_Base_MspInit(TIM_HandleTypeDef *htimer)
+{
+  //1. enable the clock for the TIM6 peripheral
+  __HAL_RCC_TIM6_CLK_ENABLE();
+
+  //2. Enable the IRQ of TIM6
+  HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);
+
+  //3. setup the priority for TIM6_DAC_IRQn
+  HAL_NVIC_SetPriority(TIM6_DAC_IRQn,15,0);
 }
