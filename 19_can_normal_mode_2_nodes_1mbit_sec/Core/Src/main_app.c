@@ -25,7 +25,7 @@ uint8_t req_counter = 0;
 int main(void)
 {
   HAL_Init();
-  SystemClock_Config_HSE(SYS_CLOCK_FREQ_50_MHZ);
+  SystemClock_Config_HSE(SYS_CLOCK_FREQ_84_MHZ);
   GPIO_Init();
   UART2_Init();
   TIMER6_Init();
@@ -179,10 +179,10 @@ void CAN1_Init(void)
   hcan1.Init.TransmitFifoPriority = DISABLE;
 
   // Settings related to CAN bit timings
-  hcan1.Init.Prescaler = 5;
-  hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan1.Init.TimeSeg1 = CAN_BS1_8TQ;
-  hcan1.Init.TimeSeg2 = CAN_BS2_1TQ;
+  hcan1.Init.Prescaler = 3;
+  hcan1.Init.SyncJumpWidth = CAN_SJW_1TQ;    // always 1 quanta
+  hcan1.Init.TimeSeg1 = CAN_BS1_11TQ;
+  hcan1.Init.TimeSeg2 = CAN_BS2_2TQ;
 
   if (HAL_CAN_Init(&hcan1) != HAL_OK)
   {
@@ -224,7 +224,7 @@ void CAN_FilterConfig(void)
   can1_filter.FilterFIFOAssignment = CAN_RX_FIFO0;
   can1_filter.FilterIdHigh = 0x0000;
   can1_filter.FilterIdLow = 0x0000;
-  can1_filter.FilterMaskIdHigh = 0x0000;
+  can1_filter.FilterMaskIdHigh = 0x01C0;
   can1_filter.FilterMaskIdLow = 0x0000;
   can1_filter.FilterMode = CAN_FILTERMODE_IDMASK;
 
