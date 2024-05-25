@@ -25,9 +25,18 @@ When you transmit a message from N1, it gets transmitted through CAN1_Tx (from N
 We will now implement the Rx path in the callback `HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)` Now you know, whenever the message comes into RX FIFO0. then RXFIFO0 interrupt will be triggered and we will come to `HAL_CAN_RxFifo0MsgPendingCallback` And here we have to implement the logic of reception. `HAL_CAN_RxFifo0MsgPendingCallback` will be called automatically when there's some data in FIFO0. As shown in the very first slide, the workflow and iterated below one more time:      
 - N1 sends a message (led number) using Data Frame (RTR==0) for every 1sec to N2   
 - After the reception of message (led number) N2 has to glow the corresponding LED.    
-- N1 also sends a Remote frame (RTR==1) to request 2 bytes of data for every 4 sec.     
+- N1 also sends a Remote frame (RTR==1 **CubeMx uses macro with value 2 instead**) to request 2 bytes of data for every 4 sec.     
 - N2 upon receiving the Remote frame should send back 2 bytes of data using Data frame.     
 - User interrupt driven code     
+      
+<img src="../images/image280.png" alt="UART2 messages on Tera Term">      
+     
+> [!NOTE]     
+> Node 1 is sending the LED number as well as the Remote Frame. And Node 2 is controlling the LED according to the LED number it received and also it is sending back the reply for the Remote Frame.     
+     
+<img src="../images/image281.png" alt="Node1 and Node2 analyser trace">      
+
+
 
 
      
