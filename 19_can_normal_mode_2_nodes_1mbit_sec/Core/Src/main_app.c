@@ -224,7 +224,7 @@ void CAN_FilterConfig(void)
   can1_filter.FilterFIFOAssignment = CAN_RX_FIFO0;
   can1_filter.FilterIdHigh = 0x0000;
   can1_filter.FilterIdLow = 0x0000;
-  can1_filter.FilterMaskIdHigh = 0x01C0;
+  can1_filter.FilterMaskIdHigh = 0x0000;
   can1_filter.FilterMaskIdLow = 0x0000;
   can1_filter.FilterMode = CAN_FILTERMODE_IDMASK;
 
