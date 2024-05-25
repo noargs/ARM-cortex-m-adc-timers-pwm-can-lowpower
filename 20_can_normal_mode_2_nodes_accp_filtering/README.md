@@ -1,4 +1,4 @@
-In this project we will change the acceptance filtering to filter out some messages as in previous CAN projects we kept the acceptance filtering (`FilterMaskIdHigh`, and `FilterMaskIdLow`) and their corresponding `FilterIdHigh`, and `FilterIdLow` all **0x0000**      
+In this project we will change the acceptance filtering to filter out some messages as in previous CAN projects we kept the acceptance filtering (`FilterMaskIdHigh`, and `FilterMaskIdLow`) and their corresponding `FilterIdHigh`, and `FilterIdLow` all **0x0000** as we were interested in receiving all the messages however here we will change the values to these register to get only desired message and discard others.     
      
 > [!NOTE]      
 > A quick reminder, to filter out bits you want in a message make them 1s in FilterMaskId High and Low registers (as these are test bits same when doing & operation). And value you want either 1s or 0s put them in the FilterId High and Low registers.      
